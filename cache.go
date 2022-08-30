@@ -1,6 +1,7 @@
 package cache
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
 	"sync"
@@ -33,7 +34,6 @@ func Read(key string) (Driver, bool) {
 /**
  * 缓存引擎定义，通过缓存引擎获取缓存客户端并进行数据缓存操作。系统根据业务类型划分了几个特定的缓存节点类型，每个类型的
  * 缓存节点可以分别指定自己的缓存实现方式，通过配置中心的配置示例如下：
- *
  */
 
 // 缓存节点服务器的类型，不同节点类型缓存的数据及其目的有所差异，业务系统要根据实际情况进行选择处理。
@@ -63,7 +63,7 @@ func Engine(systemId string, cfg configuration.Configuration) (prov Provider) {
 //缓存驱动程序定义
 type Driver interface {
 	//初始化缓存接口
-	New(cfg map[string]string) Provider
+	New(ctx context.Context, cfg map[string]string) Provider
 }
 
 /**
@@ -72,34 +72,34 @@ type Driver interface {
 type Provider interface {
 	/**
 	 * 判断缓存中是否存在指定的key
-
 	 * @param key
 	 * @return
 	 */
-	Exists(key string) bool
+	Exists(ctx context.Context, key string) bool
 
 	/**
 	 * 根据给定的key从分布式缓存中读取数据并返回，如果不存在或已过期则返回Null。
-	 *
 	 * @param key 缓存唯一键
 	 * @return
 	 */
+	String(ctx context.Context, key string) string
 
-	String(key string) string
 	/**
 	 * 使用给定的key从缓存中查询数据，如果查询不到则使用给定的数据提供器来查询数据，然后将数据存入缓存中再返回。
 	 * @param key 缓存唯一键
 	 * @param dataProvider 数据提供器
 	 * @return
 	 */
-	GetByProvider(key string, provider DataProvider) string
+	GetByProvider(ctx context.Context, key string, provider DataProvider) string
+
 	/**
 	 * 使用指定的key将对象存入分布式缓存中，并使用缓存的默认过期设置，注意，存入的对象必须是可序列化的。
 	 *
 	 * @param key   缓存唯一键
 	 * @param value 对应的值
 	 */
-	Set(key, value string)
+	Set(ctx context.Context, key, value string)
+
 	/**
 	 * 使用指定的key将对象存入分部式缓存中，并指定过期时间，注意，存入的对象必须是可序列化的
 	 *
@@ -107,7 +107,7 @@ type Provider interface {
 	 * @param value   对应的值
 	 * @param expires 过期时间，单位秒
 	 */
-	SetExpires(key, value string, expires time.Duration) bool
+	SetExpires(ctx context.Context, key, value string, expires time.Duration) bool
 
 	/**
 	 * 从缓存中删除指定key的缓存数据。
@@ -115,14 +115,14 @@ type Provider interface {
 	 * @param key
 	 * @return
 	 */
-	Delete(key string)
+	Delete(ctx context.Context, key string)
 
 	/**
 	 * 批量删除缓存中的key。
 	 *
 	 * @param keys
 	 */
-	BatchDelete(keys ...string)
+	BatchDelete(ctx context.Context, keys ...string)
 
 	/**
 	 * 将指定key的map数据的某个字段设置为给定的值。
@@ -131,7 +131,7 @@ type Provider interface {
 	 * @param field map的字段名称
 	 * @param value 要设置的字段值
 	 */
-	HSet(key, field, value string)
+	HSet(ctx context.Context, key, field, value string)
 
 	/**
 	 * 获取指定key的map数据某个字段的值，如果不存在则返回Null
@@ -140,7 +140,7 @@ type Provider interface {
 	 * @param field map的字段名称
 	 * @return
 	 */
-	HGet(key, field string) string
+	HGet(ctx context.Context, key, field string) string
 
 	/**
 	 * 获取指定key的map对象，如果不存在则返回Null
@@ -148,16 +148,14 @@ type Provider interface {
 	 * @param key map数据的键
 	 * @return
 	 */
-	HGetAll(key string) map[string]string
+	HGetAll(ctx context.Context, key string) map[string]string
 
 	/**
 	 * 将指定key的map数据中的某个字段删除。
-	 *
 	 * @param key   map数据的键
 	 * @param field map中的key名称
 	 */
-
-	HDelete(key string, fields ...string)
+	HDelete(ctx context.Context, key string, fields ...string)
 
 	/**
 	 * 判断缓存中指定key的map是否存在指定的字段，如果key或字段不存在则返回false。
@@ -166,7 +164,7 @@ type Provider interface {
 	 * @param field
 	 * @return
 	 */
-	HExists(key, field string) bool
+	HExists(ctx context.Context, key, field string) bool
 
 	/**
 	 * 对指定的key结果集执行指定的脚本并返回最终脚本执行的结果。
@@ -176,14 +174,16 @@ type Provider interface {
 	 * @param args   脚本的参数列表
 	 * @return
 	 */
-	Val(script string, keys []string, args ...interface{})
+	Val(ctx context.Context, script string, keys []string, args ...interface{})
+
 	/**
 	 * 通过直接调用缓存客户端进行缓存操作，该操作适用于高级操作，如果执行失败会返回Null。
 	 *
 	 * @param operator
 	 * @return
 	 */
-	Operate(interface{}) error
+	Operate(ctx context.Context, cmd interface{}) error
+
 	/**
 	 * 关闭客户端
 	 */
