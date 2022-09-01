@@ -4,10 +4,9 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"github.com/aluka-7/configuration"
 	"sync"
 	"time"
-
-	"github.com/aluka-7/configuration"
 )
 
 var (
@@ -26,6 +25,7 @@ func Register(name string, provider Driver) {
 	}
 	providers[name] = provider
 }
+
 func Read(key string) (Driver, bool) {
 	prov, ok := providers[key]
 	return prov, ok
@@ -60,150 +60,108 @@ func Engine(systemId string, cfg configuration.Configuration) (prov Provider) {
 	return
 }
 
-//缓存驱动程序定义
+// Driver 缓存驱动程序定义
 type Driver interface {
-	//初始化缓存接口
+	// New 初始化缓存接口
 	New(ctx context.Context, cfg map[string]string) Provider
 }
 
-/**
- * 分布式的缓存操作接口。
- */
+// Provider 分布式的缓存操作接口。
 type Provider interface {
-	/**
-	 * 判断缓存中是否存在指定的key
-	 * @param key
-	 * @return
-	 */
+	XAdd(ctx context.Context, key, id string, value interface{}) bool
+
+	XGroup(ctx context.Context, key, group, start string) bool
+
+	XReadGroup(ctx context.Context, group, consumer string, keys []string, count int64, block time.Duration) (interface{}, bool)
+
+	XRead(ctx context.Context, keys []string, count int64, block time.Duration) (interface{}, bool)
+
+	XAck(ctx context.Context, key, group string, ids ...string) bool
+
+	// Exists
+	// @description 判断缓存中是否存在指定的key
+	// @param key
+	// @return string
 	Exists(ctx context.Context, key string) bool
 
-	/**
-	 * 根据给定的key从分布式缓存中读取数据并返回，如果不存在或已过期则返回Null。
-	 * @param key 缓存唯一键
-	 * @return
-	 */
+	// String
+	// @description 根据给定的key从分布式缓存中读取数据并返回，如果不存在或已过期则返回Null。
+	// @param key 缓存唯一键
+	// @return string
 	String(ctx context.Context, key string) string
 
-	/**
-	 * 使用给定的key从缓存中查询数据，如果查询不到则使用给定的数据提供器来查询数据，然后将数据存入缓存中再返回。
-	 * @param key 缓存唯一键
-	 * @param dataProvider 数据提供器
-	 * @return
-	 */
-	GetByProvider(ctx context.Context, key string, provider DataProvider) string
+	// Set
+	// @description 使用指定的key将对象存入分布式缓存中，并使用缓存的默认过期设置，注意，存入的对象必须是可序列化的。
+	// @param key   缓存唯一键
+	// @param value 对应的值
+	Set(ctx context.Context, key, value string) bool
 
-	/**
-	 * 使用指定的key将对象存入分布式缓存中，并使用缓存的默认过期设置，注意，存入的对象必须是可序列化的。
-	 *
-	 * @param key   缓存唯一键
-	 * @param value 对应的值
-	 */
-	Set(ctx context.Context, key, value string)
-
-	/**
-	 * 使用指定的key将对象存入分部式缓存中，并指定过期时间，注意，存入的对象必须是可序列化的
-	 *
-	 * @param key     缓存唯一键
-	 * @param value   对应的值
-	 * @param expires 过期时间，单位秒
-	 */
+	// SetExpires
+	// @description 使用指定的key将对象存入分部式缓存中，并指定过期时间，注意，存入的对象必须是可序列化的
+	// @param key     缓存唯一键
+	// @param value   对应的值
+	// @param expires 过期时间，单位秒
 	SetExpires(ctx context.Context, key, value string, expires time.Duration) bool
 
-	/**
-	 * 从缓存中删除指定key的缓存数据。
-	 *
-	 * @param key
-	 * @return
-	 */
-	Delete(ctx context.Context, key string)
+	// Delete
+	// @description 从缓存中删除指定key的缓存数据。
+	// @param key
+	// @return
+	Delete(ctx context.Context, key string) bool
 
-	/**
-	 * 批量删除缓存中的key。
-	 *
-	 * @param keys
-	 */
-	BatchDelete(ctx context.Context, keys ...string)
+	// BatchDelete
+	// @description 批量删除缓存中的key
+	// @param keys
+	BatchDelete(ctx context.Context, keys ...string) bool
 
-	/**
-	 * 将指定key的map数据的某个字段设置为给定的值。
-	 *
-	 * @param key   map数据的键
-	 * @param field map的字段名称
-	 * @param value 要设置的字段值
-	 */
-	HSet(ctx context.Context, key, field, value string)
+	// HSet
+	// @description 将指定key的map数据的某个字段设置为给定的值
+	// @param key   map数据的键
+	// @param field map的字段名称
+	// @param value 要设置的字段值
+	HSet(ctx context.Context, key, field, value string) bool
 
-	/**
-	 * 获取指定key的map数据某个字段的值，如果不存在则返回Null
-	 *
-	 * @param key   map数据的键
-	 * @param field map的字段名称
-	 * @return
-	 */
+	// HGet
+	// @description 获取指定key的map数据某个字段的值，如果不存在则返回Null
+	// @param key   map数据的键
+	// @param field map的字段名称
+	// @return
 	HGet(ctx context.Context, key, field string) string
 
-	/**
-	 * 获取指定key的map对象，如果不存在则返回Null
-	 *
-	 * @param key map数据的键
-	 * @return
-	 */
+	// HGetAll
+	// @description 获取指定key的map对象，如果不存在则返回Null
+	// @param key map数据的键
+	// @return map[string]string
 	HGetAll(ctx context.Context, key string) map[string]string
 
-	/**
-	 * 将指定key的map数据中的某个字段删除。
-	 * @param key   map数据的键
-	 * @param field map中的key名称
-	 */
-	HDelete(ctx context.Context, key string, fields ...string)
+	// HDelete
+	// 将指定key的map数据中的某个字段删除。
+	// @param key   map数据的键
+	// @param field map中的key名称
+	HDelete(ctx context.Context, key string, fields ...string) bool
 
-	/**
-	 * 判断缓存中指定key的map是否存在指定的字段，如果key或字段不存在则返回false。
-	 *
-	 * @param key
-	 * @param field
-	 * @return
-	 */
+	// HExists
+	// 判断缓存中指定key的map是否存在指定的字段，如果key或字段不存在则返回false。
+	// @param key
+	// @param field
+	// @return bool
 	HExists(ctx context.Context, key, field string) bool
 
-	/**
-	 * 对指定的key结果集执行指定的脚本并返回最终脚本执行的结果。
-	 *
-	 * @param script 脚本
-	 * @param key    要操作的缓存key
-	 * @param args   脚本的参数列表
-	 * @return
-	 */
-	Val(ctx context.Context, script string, keys []string, args ...interface{})
+	// Val
+	// 对指定的key结果集执行指定的脚本并返回最终脚本执行的结果。
+	// @param script 脚本
+	// @param key    要操作的缓存key
+	// @param args   脚本的参数列表
+	// @return
+	Val(ctx context.Context, script string, keys []string, args ...interface{}) string
 
-	/**
-	 * 通过直接调用缓存客户端进行缓存操作，该操作适用于高级操作，如果执行失败会返回Null。
-	 *
-	 * @param operator
-	 * @return
-	 */
+	// Operate
+	// 通过直接调用缓存客户端进行缓存操作，该操作适用于高级操作，如果执行失败会返回Null。
+	// @param operator
+	// @return err
 	Operate(ctx context.Context, cmd interface{}) error
 
-	/**
-	 * 关闭客户端
-	 */
+	// Close
+	// 关闭客户端
 	Close()
-}
-
-/**
- * 缓存的数据提供器接口定义。
- *
- * @author Chirs Chou
- */
-type DataProvider interface {
-
-	/**
-	 * 获取数据对应的过期时间（单位秒），如果返回-1则表明使用缓存的默认设置。
-	 */
-	Expires() int
-
-	/**
-	 * 获取缓存的数据，返回的数据必须是可序列化的对象。
-	 */
-	Data(key string) string
 }
