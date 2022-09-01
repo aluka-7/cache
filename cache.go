@@ -44,7 +44,7 @@ func Engine(systemId string, cfg configuration.Configuration) (prov Provider) {
 		if err := json.Unmarshal([]byte(data), &conf); err == nil {
 			if v, ok := conf["provider"]; ok {
 				if _prov, _ok := Read(v); _ok {
-					prov = _prov.New(conf)
+					prov = _prov.New(context.Background(), conf)
 				} else {
 					panic("加载缓存实现出错!")
 				}
