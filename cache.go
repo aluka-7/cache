@@ -68,16 +68,6 @@ type Driver interface {
 
 // Provider 分布式的缓存操作接口。
 type Provider interface {
-	XAdd(ctx context.Context, key, id string, value interface{}) bool
-
-	XGroup(ctx context.Context, key, group, start string) bool
-
-	XReadGroup(ctx context.Context, group, consumer string, keys []string, count int64, block time.Duration) (interface{}, bool)
-
-	XRead(ctx context.Context, keys []string, count int64, block time.Duration) (interface{}, bool)
-
-	XAck(ctx context.Context, key, group string, ids ...string) bool
-
 	// Exists
 	// @description 判断缓存中是否存在指定的key
 	// @param key
