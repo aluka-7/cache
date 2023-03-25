@@ -71,7 +71,7 @@ type Provider interface {
 	// Exists
 	// @description 判断缓存中是否存在指定的key
 	// @param key
-	// @return string
+	// @return bool
 	Exists(ctx context.Context, key string) bool
 
 	// String
@@ -84,6 +84,7 @@ type Provider interface {
 	// @description 使用指定的key将对象存入分布式缓存中，并使用缓存的默认过期设置，注意，存入的对象必须是可序列化的。
 	// @param key   缓存唯一键
 	// @param value 对应的值
+	// @return bool
 	Set(ctx context.Context, key, value string) bool
 
 	// SetExpires
@@ -91,12 +92,13 @@ type Provider interface {
 	// @param key     缓存唯一键
 	// @param value   对应的值
 	// @param expires 过期时间，单位秒
+	// @return bool
 	SetExpires(ctx context.Context, key, value string, expires time.Duration) bool
 
 	// Delete
 	// @description 从缓存中删除指定key的缓存数据。
 	// @param key
-	// @return
+	// @return bool
 	Delete(ctx context.Context, key string) bool
 
 	// BatchDelete
@@ -144,6 +146,12 @@ type Provider interface {
 	// @param args   脚本的参数列表
 	// @return
 	Val(ctx context.Context, script string, keys []string, args ...interface{}) string
+
+	// Incr
+	// 对指定的key执行自增操作
+	// @param key
+	// @return bool
+	Incr(ctx context.Context, key string) bool
 
 	// Operate
 	// 通过直接调用缓存客户端进行缓存操作，该操作适用于高级操作，如果执行失败会返回Null。
