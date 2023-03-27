@@ -153,6 +153,21 @@ type Provider interface {
 	// @return bool
 	Incr(ctx context.Context, key string) bool
 
+	// IncrExpires
+	// 对指定的key执行自增操作，并设置过期时间
+	// @param key
+	// @param expires 过期时间，单位秒
+	// @return bool
+	IncrExpires(ctx context.Context, key string, expires time.Duration) bool
+
+	// IncrByExpires
+	// 对指定的key执行自增操作，并设置过期时间
+	// @param key
+	// @param value
+	// @param expires 过期时间，单位秒
+	// @return bool
+	IncrByExpires(ctx context.Context, key string, value int64, expires time.Duration) bool
+
 	// Operate
 	// 通过直接调用缓存客户端进行缓存操作，该操作适用于高级操作，如果执行失败会返回Null。
 	// @param operator
