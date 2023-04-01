@@ -68,6 +68,10 @@ type Driver interface {
 
 // Provider 分布式的缓存操作接口。
 type Provider interface {
+	SetNX(ctx context.Context, key, value string, expires time.Duration)
+
+	SMembers(ctx context.Context, key string) []string
+
 	// Exists
 	// @description 判断缓存中是否存在指定的key
 	// @param key
