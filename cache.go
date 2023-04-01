@@ -68,7 +68,7 @@ type Driver interface {
 
 // Provider 分布式的缓存操作接口。
 type Provider interface {
-	SetNX(ctx context.Context, key, value string, expires time.Duration)
+	SetNX(ctx context.Context, key, value string, expires time.Duration) bool
 
 	SMembers(ctx context.Context, key string) []string
 
