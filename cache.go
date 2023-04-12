@@ -68,6 +68,8 @@ type Driver interface {
 
 // Provider 分布式的缓存操作接口。
 type Provider interface {
+	Client() interface{}
+
 	LRange(ctx context.Context, key string, start, stop int64) []string
 
 	LIndex(ctx context.Context, key string, index int64) string
