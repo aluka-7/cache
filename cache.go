@@ -68,8 +68,22 @@ type Driver interface {
 
 // Provider 分布式的缓存操作接口。
 type Provider interface {
+	LRange(ctx context.Context, key string, start, stop int64) []string
+
+	LIndex(ctx context.Context, key string, index int64) string
+
+	RPush(ctx context.Context, key string, value ...interface{}) bool
+
+	LPush(ctx context.Context, key string, value ...interface{}) bool
+
+	LLen(ctx context.Context, key string) int64
+
+	LPop(ctx context.Context, key string) string
+
+	RPop(ctx context.Context, key string) string
+
 	SAdd(ctx context.Context, key string, members ...interface{}) bool
-	
+
 	SCard(ctx context.Context, key string) int64
 
 	SetNX(ctx context.Context, key, value string, expires time.Duration) bool
