@@ -68,6 +68,10 @@ type Driver interface {
 
 // Provider 分布式的缓存操作接口。
 type Provider interface {
+	SAdd(ctx context.Context, key string, members ...interface{}) bool
+	
+	SCard(ctx context.Context, key string) int64
+
 	SetNX(ctx context.Context, key, value string, expires time.Duration) bool
 
 	SMembers(ctx context.Context, key string) []string
